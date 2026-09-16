@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Capital Treasure</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { --bg-primary: #0f172a; --bg-card: #ffffff; --text-main: #0f172a; --text-muted: #64748b; --accent: #2563eb; --border: #e2e8f0; --radius: 12px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #f8fafc; color: var(--text-main); display: flex; min-height: 100vh; }
+        
+        .sidebar { width: 260px; background-color: var(--bg-primary); color: #fff; display: flex; flex-direction: column; position: fixed; height: 100vh; overflow-y: auto; }
+        .brand { padding: 20px 24px; display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .brand i { color: var(--accent); }
+        
+        .user-role-badge { margin: 12px 16px 4px 16px; padding: 8px 12px; background: rgba(37, 99, 235, 0.2); border: 1px solid rgba(37, 99, 235, 0.4); border-radius: 8px; font-size: 12px; color: #93c5fd; display: flex; align-items: center; justify-content: space-between; }
+        .nav-list { list-style: none; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+        .nav-item a { width: 100%; padding: 12px 16px; border-radius: var(--radius); color: #94a3b8; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .nav-item a:hover, .nav-item.active a { background-color: rgba(255, 255, 255, 0.1); color: #fff; }
+        .nav-item.active a { background-color: var(--accent); }
+        .nav-divider { height: 1px; background-color: rgba(255, 255, 255, 0.1); margin: 8px 0; }
+        
+        .main-wrapper { margin-left: 260px; flex: 1; display: flex; flex-direction: column; }
+        header { background-color: var(--bg-card); padding: 16px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .content-body { padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+
+        /* Form Card */
+        .form-card { background: var(--bg-card); padding: 28px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 12px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 13px; font-weight: 600; color: #334155; }
+        .form-group input, .form-group select { padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; outline: none; }
+        .btn-add { background: var(--accent); color: white; border: none; padding: 12px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; height: fit-content; align-self: flex-end; display: flex; align-items: center; gap: 6px; }
+        .btn-add:hover { background: #1d4ed8; }
+
+        /* Table Style */
+        .table-card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: #f8fafc; padding: 14px 16px; font-size: 12px; color: var(--text-muted); font-weight: 600; }
+        td { padding: 14px 16px; border-top: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+        
+        /* Badges & Buttons */
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-active { background: #d1fae5; color: #059669; }
+        .badge-blocked { background: #fee2e2; color: #dc2626; }
+        .badge-resign { background: #f1f5f9; color: #64748b; }
+        
+        /* Online/Offline Dot */
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot-online { background-color: #10b981; box-shadow: 0 0 6px #10b981; }
+        .dot-offline { background-color: #94a3b8; }
+
+        .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-action { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); cursor: pointer; font-size: 12px; font-weight: 500; background: #f8fafc; transition: all 0.2s; }
+        .btn-action:hover { background: #f1f5f9; }
+        .btn-permission { background: #e0f2fe; color: #0284c7; border-color: #bae6fd; }
+        .btn-toggle { background: #fef3c7; border-color: #fde68a; color: #d97706; }
+        .btn-resign { background: #f1f5f9; color: #4b5563; }
+        .btn-delete { background: #fef2f2; border-color: #fee2e2; color: #dc2626; }
+
+        /* Permission Control Card */
+        .permission-card { background: var(--bg-card); padding: 24px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .permission-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+        .permission-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 500; }
+        
+        /* Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 38px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #2563eb; }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        /* Modal Styles for User-Specific Permissions */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--bg-card); width: 500px; max-width: 90%; border-radius: var(--radius); padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 16px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+        .modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="brand"><i data-lucide="shield-check"></i><span>Capital Treasure</span></div>
+        <div class="user-role-badge">
+            <span>Role: <strong id="role-display">System Admin (Full)</strong></span>
+            <i data-lucide="user-cog" style="width: 14px; height: 14px;"></i>
+        </div>
+        <ul class="nav-list">
+            <!-- Dashboard Menu -->
+            <li class="nav-item" id="menu-dashboard"><a href="dashboard.html"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+
+            <!-- Fleet Items -->
+            <li class="nav-item" id="menu-fuel"><a href="refilling.html"><i data-lucide="fuel"></i> Fuel Refilling</a></li>
+            <li class="nav-item" id="menu-maintenance"><a href="matainment.html"><i data-lucide="wrench"></i> Maintenance</a></li>
+            <li class="nav-item" id="menu-inspection"><a href="Inspection.html"><i data-lucide="clipboard-check"></i> Inspection</a></li>
+
+            <!-- Warehouse Items -->
+            <li class="nav-item" id="menu-warehouse"><a href="warehouse.html"><i data-lucide="warehouse"></i> Warehouse Overview</a></li>
+            <li class="nav-item" id="menu-stock"><a href="stock.html"><i data-lucide="boxes"></i> Stock In/Out</a></li>
+            <li class="nav-item" id="menu-inventory"><a href="inventory.html"><i data-lucide="list-checks"></i> Inventory List</a></li>
+
+            <!-- Admin / Stationery Items -->
+            <li class="nav-item" id="menu-stationery"><a href="stationary.html"><i data-lucide="pen-tool"></i> Stationery Requests</a></li>
+            <li class="nav-item" id="menu-fixed-assets"><a href="fixaccess.html"><i data-lucide="box"></i> Fixed Assets</a></li>
+
+            <!-- HR Items -->
+            <li class="nav-item" id="menu-leave"><a href="leaves.html"><i data-lucide="calendar"></i> Leave Requests</a></li>
+            <li class="nav-item" id="menu-meeting"><a href="meetingnote.html"><i data-lucide="file-text"></i> Meeting Notes</a></li>
+            <li class="nav-item" id="menu-manpower"><a href="manpower.html"><i data-lucide="user-plus"></i> Manpower Plan</a></li>
+            <li class="nav-item" id="menu-interview"><a href="interview-tracking.html"><i data-lucide="user-check"></i> Interview Tracking</a></li>
+
+            <!-- User Manage -->
+            <li class="nav-item active" id="menu-usermanage"><a href="usermanage.html"><i data-lucide="users"></i> User & Role Control</a></li>
+
+            <!-- Log Out -->
+            <li class="nav-divider"></li>
+            <li class="nav-item"><a href="#" onclick="logout()" style="color: #ef4444;"><i data-lucide="log-out"></i> Log Out</a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper">
+        <header>
+            <h1 style="font-size: 20px;">User & Role Control</h1>
+            <select id="roleSelector" onchange="changeRole(this.value)" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                <option value="ADMIN">View as System Admin (Full Access)</option>
+                <option value="FLEET">View as Fleet Manager</option>
+                <option value="WAREHOUSE">View as Warehouse Manager</option>
+                <option value="HR">View as HR Manager</option>
+            </select>
+        </header>
+
+        <div class="content-body">
+            <!-- Form: Add New User -->
+            <div class="form-card">
+                <h3 style="font-size: 15px;">Add New Staff / User</h3>
+                <form id="addUserForm" onsubmit="handleAddUser(event)" class="form-grid">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="userName" placeholder="e.g. Aung Aung" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select id="userDept" required>
+                            <option value="">Select Department</option>
+                            <option value="Operations">Operations</option>
+                            <option value="Logistics & Fleet">Logistics & Fleet</option>
+                            <option value="Warehouse">Warehouse</option>
+                            <option value="Human Resources">Human Resources</option>
+                            <option value="IT System">IT System</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>System Role</label>
+                        <select id="userRole" required>
+                            <option value="">Select Role</option>
+                            <option value="ADMIN">System Admin (Full Access)</option>
+                            <option value="FLEET">Fleet Manager</option>
+                            <option value="WAREHOUSE">Warehouse Staff</option>
+                            <option value="HR">HR Manager</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-add"><i data-lucide="user-plus" style="width: 16px; height: 16px;"></i> + Add User</button>
+                </form>
+            </div>
+
+            <!-- User Management Table -->
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th>Department</th>
+                            <th>Role Access</th>
+                            <th>Online Status</th>
+                            <th>Account Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- Dynamic Data -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Form/Menu Permission On/Off Section (Global Default) -->
+            <div class="permission-card">
+                <h3 style="font-size: 15px; margin-bottom: 4px;">Global Form & Menu Permission Control (On/Off)</h3>
+                <p style="font-size: 12px; color: var(--text-muted);">စနစ်အတွင်းရှိ သီးသန့် Form များနှင့် Page များကို ယေဘုယျ ပိတ်ရန်/ဖွင့်ရန် (On/Off) ထိန်းချုပ်ပါ။</p>
+                <div class="permission-grid" id="permissionGrid">
+                    <!-- Dynamic Permission Toggles -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User-Specific Permission Modal -->
+    <div class="modal-overlay" id="userPermModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle" style="font-size: 16px;">User Permissions</h3>
+                <button class="modal-close" onclick="closeUserPermissionModal()">&times;</button>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted);">ဤဝန်ထမ်းအတွက် သီးသန့် Form ဝင်ရောက်ခွင့်များကို ဖွင့်မည်/ပိတ်မည်။</p>
+            <div id="modalPermissionGrid" style="display: flex; flex-direction: column; gap: 10px; max-height: 350px; overflow-y: auto;">
+                <!-- Dynamic per-user toggles -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const initialUsers = [
+            { id: 1, name: "abc123", dept: "IT System", role: "ADMIN", status: "Active", online: true },
+            { id: 2, name: "Admin User", dept: "IT System", role: "ADMIN", status: "Active", online: true },
+            { id: 3, name: "Kyaw Swar", dept: "Logistics & Fleet", role: "FLEET", status: "Active", online: false },
+            { id: 4, name: "Thida", dept: "Warehouse", role: "WAREHOUSE", status: "Active", online: true }
+        ];
+
+        const initialPermissions = [
+            { id: 'fuel', name: 'Fuel Refilling Form', enabled: true },
+            { id: 'maintenance', name: 'Maintenance Form', enabled: true },
+            { id: 'inspection', name: 'Inspection Form', enabled: true },
+            { id: 'warehouse', name: 'Warehouse Overview', enabled: true },
+            { id: 'stock', name: 'Stock In/Out Form', enabled: true },
+            { id: 'stationery', name: 'Stationery Requests', enabled: true },
+            { id: 'leave', name: 'Leave Requests Form', enabled: true },
+            { id: 'interview', name: 'Interview Tracking', enabled: true }
+        ];
+
+        let currentEditingUserId = null;
+
+        function getUsers() {
+            return JSON.parse(localStorage.getItem('app_users')) || initialUsers;
+        }
+
+        function saveUsers(users) {
+            localStorage.setItem('app_users', JSON.stringify(users));
+            renderUsersTable();
+        }
+
+        function getPermissions() {
+            return JSON.parse(localStorage.getItem('app_permissions')) || initialPermissions;
+        }
+
+        function savePermissions(perms) {
+            localStorage.setItem('app_permissions', JSON.stringify(perms));
+            renderPermissions();
+        }
+
+        // Get user-specific permissions or fallback to global/department defaults
+        function getUserPermissions(userId) {
+            const customPerms = JSON.parse(localStorage.getItem('user_custom_permissions')) || {};
+            if (customPerms[userId]) {
+                return customPerms[userId];
+            }
+            return JSON.parse(JSON.stringify(getPermissions()));
+        }
+
+        function saveUserPermissions(userId, perms) {
+            const customPerms = JSON.parse(localStorage.getItem('user_custom_permissions')) || {};
+            customPerms[userId] = perms;
+            localStorage.setItem('user_custom_permissions', JSON.stringify(customPerms));
+        }
+
+        function renderUsersTable() {
+            const users = getUsers();
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+
+            users.forEach(user => {
+                let badgeClass = 'badge-active';
+                if (user.status === 'Blocked') badgeClass = 'badge-blocked';
+                if (user.status === 'Resigned') badgeClass = 'badge-resign';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${user.name}</strong></td>
+                    <td>${user.dept}</td>
+                    <td><span style="font-weight: 600; color: #2563eb;">${user.role}</span></td>
+                    <td>
+                        <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500;">
+                            <span class="status-dot ${user.online ? 'dot-online' : 'dot-offline'}"></span>
+                            ${user.online ? 'Online' : 'Offline'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge ${badgeClass}">${user.status}</span>
+                    </td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn-action btn-permission" onclick="openUserPermissionModal(${user.id})">Permissions</button>
+                            <button class="btn-action btn-toggle" onclick="toggleStatus(${user.id})">
+                                ${user.status === 'Active' ? 'Block' : 'Unblock'}
+                            </button>
+                            <button class="btn-action btn-resign" onclick="toggleResign(${user.id})">
+                                ${user.status === 'Resigned' ? 'Rehire' : 'Resign'}
+                            </button>
+                            <button class="btn-action btn-delete" onclick="deleteUser(${user.id})">Delete</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderPermissions() {
+            const perms = getPermissions();
+            const grid = document.getElementById('permissionGrid');
+            grid.innerHTML = '';
+
+            perms.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'permission-item';
+                div.innerHTML = `
+                    <span>${p.name}</span>
+                    <label class="switch">
+                        <input type="checkbox" ${p.enabled ? 'checked' : ''} onchange="togglePermission('${p.id}')">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        // Open Modal for Individual User Permissions
+        function openUserPermissionModal(userId) {
+            currentEditingUserId = userId;
+            const users = getUsers();
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            document.getElementById('modalTitle').innerText = `Permissions for: ${user.name} (${user.dept})`;
+            
+            const userPerms = getUserPermissions(userId);
+            const modalGrid = document.getElementById('modalPermissionGrid');
+            modalGrid.innerHTML = '';
+
+            userPerms.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'permission-item';
+                div.innerHTML = `
+                    <span>${p.name}</span>
+                    <label class="switch">
+                        <input type="checkbox" ${p.enabled ? 'checked' : ''} onchange="updateUserPermissionItem(${userId}, '${p.id}')">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                modalGrid.appendChild(div);
+            });
+
+            document.getElementById('userPermModal').style.display = 'flex';
+        }
+
+        function closeUserPermissionModal() {
+            document.getElementById('userPermModal').style.display = 'none';
+            currentEditingUserId = null;
+        }
+
+        function updateUserPermissionItem(userId, permId) {
+            let userPerms = getUserPermissions(userId);
+            const perm = userPerms.find(p => p.id === permId);
+            if (perm) {
+                perm.enabled = !perm.enabled;
+                saveUserPermissions(userId, userPerms);
+            }
+        }
+
+        function handleAddUser(e) {
+            e.preventDefault();
+            const name = document.getElementById('userName').value;
+            const dept = document.getElementById('userDept').value;
+            const role = document.getElementById('userRole').value;
+
+            const users = getUsers();
+            const newUserId = Date.now();
+            users.push({ 
+                id: newUserId, 
+                name, 
+                dept, 
+                role, 
+                status: 'Active', 
+                online: Math.random() > 0.5 
+            });
+            saveUsers(users);
+
+            // Optional: Automatically assign tailored default permissions based on Department
+            let defaultPerms = JSON.parse(JSON.stringify(initialPermissions));
+            defaultPerms.forEach(p => {
+                if (dept === 'Warehouse') {
+                    p.enabled = ['warehouse', 'stock', 'inventory'].includes(p.id);
+                } else if (dept === 'Logistics & Fleet') {
+                    p.enabled = ['fuel', 'maintenance', 'inspection'].includes(p.id);
+                } else if (dept === 'Human Resources') {
+                    p.enabled = ['leave', 'interview', 'manpower'].includes(p.id);
+                } else if (dept === 'IT System' || dept === 'Operations') {
+                    p.enabled = true;
+                } else {
+                    p.enabled = false;
+                }
+            });
+            saveUserPermissions(newUserId, defaultPerms);
+
+            document.getElementById('addUserForm').reset();
+        }
+
+        function toggleStatus(id) {
+            const users = getUsers();
+            const user = users.find(u => u.id === id);
+            if (user) {
+                user.status = user.status === 'Active' ? 'Blocked' : 'Active';
+                saveUsers(users);
+            }
+        }
+
+        function toggleResign(id) {
+            const users = getUsers();
+            const user = users.find(u => u.id === id);
+            if (user) {
+                user.status = user.status === 'Resigned' ? 'Active' : 'Resigned';
+                saveUsers(users);
+            }
+        }
+
+        function deleteUser(id) {
+            if (confirm("Are you sure you want to delete this user?")) {
+                let users = getUsers();
+                users = users.filter(u => u.id !== id);
+                saveUsers(users);
+            }
+        }
+
+        function togglePermission(id) {
+            const perms = getPermissions();
+            const perm = perms.find(p => p.id === id);
+            if (perm) {
+                perm.enabled = !perm.enabled;
+                savePermissions(perms);
+            }
+        }
+
+        function changeRole(role) {
+            const loginRole = localStorage.getItem('login_role') || 'ADMIN';
+            if (loginRole !== 'ADMIN') return;
+
+            localStorage.setItem('user_role', role);
+            if (typeof applyRoleAccess === 'function') {
+                applyRoleAccess(role, loginRole);
+            }
+        }
+
+        window.onload = function() {
+            const loginRole = localStorage.getItem('login_role') || 'ADMIN';
+            const currentRole = localStorage.getItem('user_role') || loginRole;
+            const roleSelector = document.getElementById('roleSelector');
+
+            if (roleSelector) {
+                roleSelector.style.display = 'inline-block';
+                roleSelector.value = currentRole;
+            }
+
+            renderUsersTable();
+            renderPermissions();
+        };
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
