@@ -99,7 +99,7 @@
                     <!-- Region -->
                     <div class="form-group">
                         <label>Region <span style="color: red;">*</span></label>
-                        <select id="region" onchange="updateData()" required>
+                        <select id="region" onchange="updateVehiclesAndDrivers()" required>
                             <option value="">Select Region</option>
                             <option value="YGN">Yangon (YGN)</option>
                             <option value="MDY">Mandalay (MDY)</option>
@@ -108,7 +108,7 @@
                     <!-- Vehicle No. -->
                     <div class="form-group">
                         <label>Vehicle No. <span style="color: red;">*</span></label>
-                        <select id="vehicle" disabled required><option value="">Select Region First</option></select>
+                        <select id="vehicle" onchange="updateFuelType()" disabled required><option value="">Select Region First</option></select>
                     </div>
                     <!-- Driver Name -->
                     <div class="form-group">
@@ -123,6 +123,8 @@
                             <option value="Octane 92">Octane 92</option>
                             <option value="Octane 95">Octane 95</option>
                             <option value="Diesel">Diesel</option>
+                            <option value="Premium Diesel / D">Premium Diesel / D</option>
+                            <option value="92 / 95 / PD / D">92 / 95 / PD / D</option>
                         </select>
                     </div>
                     <!-- Rate per Liter (MMK) -->
@@ -179,24 +181,73 @@
 
         document.getElementById('date').valueAsDate = new Date();
 
-        const data = {
-            YGN: { vehicles: ["YGN 1A/1234", "YGN 2B/5678"], drivers: ["U Ba (YGN)", "Aung Aung (YGN)"] },
-            MDY: { vehicles: ["MDY 4D/3456", "MDY 5E/7890"], drivers: ["U Hla (MDY)", "Tun Tun (MDY)"] }
-        };
+        const scriptURL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL'; // <-- ကိုယ့်ရဲ့ Web App URL အမှန်ကို ထည့်ရန်
+        let globalUsersData = [];
 
-        function updateData() {
+        // Page Load ဖြစ်တာနဲ့ Google Sheet က 'Users' ထဲက ဒေတာတွေကို လှမ်းဆွဲမည်
+        window.addEventListener('DOMContentLoaded', () => {
+            fetch(scriptURL + '?action=getUsers') // Apps Script ဘက်တွင် action=='getUsers' ဖြင့် ဇယားဒေတာထုတ်ပေးရန်လိုပါမည်
+                .then(res => res.json())
+                .then(data => {
+                    globalUsersData = data; // ဥပမာ - [{region: 'YGN', carName: '7M/8226', driverName: 'Ko Zayar Hein', fuelType: '92 Octane (Petrol)/95'}, ...]
+                })
+                .catch(err => console.error("Failed to load users data from sheet", err));
+
+            const role = localStorage.getItem('user_role') || localStorage.getItem('login_role');
+            if(role !== 'ADMIN') {
+                const dashboardMenu = document.getElementById('menu-dashboard');
+                if(dashboardMenu) {
+                    dashboardMenu.style.display = 'none';
+                }
+            }
+        });
+
+        // Region ရွေးလိုက်ပါက သက်ဆိုင်ရာ Vehicle နှင့် Driver များကို Filter လုပ်ပြီး ပြပေးမည်
+        function updateVehiclesAndDrivers() {
             const r = document.getElementById('region').value;
-            const v = document.getElementById('vehicle');
-            const d = document.getElementById('driver');
-            v.innerHTML = d.innerHTML = '<option value="">Select...</option>';
+            const vSelect = document.getElementById('vehicle');
+            const dSelect = document.getElementById('driver');
+            
+            vSelect.innerHTML = '<option value="">Select Vehicle</option>';
+            dSelect.innerHTML = '<option value="">Select Driver</option>';
+
             if(r) {
-                v.disabled = d.disabled = false;
-                data[r].vehicles.forEach(x => v.innerHTML += `<option value="${x}">${x}</option>`);
-                data[r].drivers.forEach(x => d.innerHTML += `<option value="${x}">${x}</option>`);
+                vSelect.disabled = false;
+                dSelect.disabled = false;
+
+                // globalUsersData ထဲမှ ရွေးချယ်ထားသော Region နှင့် ကိုက်ညီသည်များကို ရှာမည်
+                const filtered = globalUsersData.filter(item => item.region === r);
+
+                // Vehicle No. များကို ထည့်မည် (Duplicate များကို ရှောင်ရှားရန်)
+                const uniqueVehicles = [...new Set(filtered.map(item => item.carName))];
+                uniqueVehicles.forEach(car => {
+                    vSelect.innerHTML += `<option value="${car}">${car}</option>`;
+                });
+
+                // Driver Name များကို ထည့်မည်
+                const uniqueDrivers = [...new Set(filtered.map(item => item.driverName))];
+                uniqueDrivers.forEach(driver => {
+                    if(driver) {
+                        dSelect.innerHTML += `<option value="${driver}">${driver}</option>`;
+                    }
+                });
             } else { 
-                v.disabled = d.disabled = true; 
-                v.innerHTML = '<option value="">Select Region First</option>';
-                d.innerHTML = '<option value="">Select Region First</option>';
+                vSelect.disabled = dSelect.disabled = true; 
+                vSelect.innerHTML = '<option value="">Select Region First</option>';
+                dSelect.innerHTML = '<option value="">Select Region First</option>';
+            }
+        }
+
+        // Vehicle No. ရွေးလိုက်ပါက သက်ဆိုင်ရာ Fuel Type ကို အလိုအလျောက် ရွေးချယ်ပေးမည်
+        function updateFuelType() {
+            const selectedCar = document.getElementById('vehicle').value;
+            const fuelTypeSelect = document.getElementById('fuelType');
+
+            if (selectedCar) {
+                const matchedItem = globalUsersData.find(item => item.carName === selectedCar);
+                if (matchedItem && matchedItem.fuelType) {
+                    fuelTypeSelect.value = matchedItem.fuelType;
+                }
             }
         }
 
@@ -206,7 +257,6 @@
             document.getElementById('total').value = (r * l).toLocaleString() + " MMK";
         }
 
-        // Custom UI Modal ပြသရန် Function
         function showModal(title, message, type = 'success') {
             const overlay = document.getElementById('customModal');
             const iconDiv = document.getElementById('modalIcon');
@@ -224,11 +274,10 @@
 
         function closeModal() {
             document.getElementById('customModal').classList.remove('active');
-            location.reload(); // ပိတ်လိုက်လျှင် Page ကို Refresh လုပ်ပေးမည်
+            location.reload();
         }
 
         function submitFuel() {
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbz_yVu_Lq3DTl_jfRhjcESU8OuqevCIkp4FbUicjBPTSCUo_QO_QAV2qvOfMbrDwNLL/exec'; // <-- ကိုယ့်ရဲ့ Web App URL အမှန်ကို ထည့်ရန်
             const btn = document.getElementById('submitBtn');
             btn.innerText = "Saving...";
             btn.disabled = true;
@@ -243,7 +292,7 @@
                 driverName: document.getElementById('driver').value,     
                 type: document.getElementById('fuelType').value,
                 rate: document.getElementById('rate').value,
-                liter: document.getElementById('liters').value,           
+                liter: document.getElementById('liters').value,          
                 amount: document.getElementById('total').value,
                 extraCash: document.getElementById('extraCash').value,
                 stationName: document.getElementById('stationName').value,
@@ -267,16 +316,6 @@
                 showModal("Connection Error!", "Could not save data. Please check your Apps Script URL or internet connection.", "error");
             });
         }
-
-        window.addEventListener('DOMContentLoaded', (event) => {
-            const role = localStorage.getItem('user_role') || localStorage.getItem('login_role');
-            if(role !== 'ADMIN') {
-                const dashboardMenu = document.getElementById('menu-dashboard');
-                if(dashboardMenu) {
-                    dashboardMenu.style.display = 'none';
-                }
-            }
-        });
     </script>
     <script src="script.js"></script>
 </body>
