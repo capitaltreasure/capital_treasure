@@ -184,14 +184,23 @@
         const scriptURL = 'https://script.google.com/macros/s/AKfycbzdEqr-pTmgiGTHPOYtWh1_XICforGMjRB95TdOawowt3FJHaGyflAWaWiRlezs0kyC/exec'; // <-- ကိုယ့်ရဲ့ Web App URL အမှန်ကို ထည့်ရန်
         let globalUsersData = [];
 
-        // Page Load ဖြစ်တာနဲ့ Google Sheet က 'Users' ထဲက ဒေတာတွေကို လှမ်းဆွဲမည်
+      // Page Load ဖြစ်တာနဲ့ Google Sheet က 'Log' Tab ထဲက ဒေတာများကို လှမ်းဆွဲမည်
         window.addEventListener('DOMContentLoaded', () => {
-            fetch(scriptURL + '?action=getUsers') // Apps Script ဘက်တွင် action=='getUsers' ဖြင့် ဇယားဒေတာထုတ်ပေးရန်လိုပါမည်
+            fetch(scriptURL + '?action=getLogs') // 'getLog' အစား 'getLogs' ဟု အမှန်ပြင်ထားပါသည်
                 .then(res => res.json())
                 .then(data => {
-                    globalUsersData = data; // ဥပမာ - [{region: 'YGN', carName: '7M/8226', driverName: 'Ko Zayar Hein', fuelType: '92 Octane (Petrol)/95'}, ...]
+                    // ရလာသည့် data သည် Array ဟုတ်မဟုတ် စစ်ဆေးပြီးမှ ထည့်မည်
+                    if (Array.isArray(data)) {
+                        globalUsersData = data; 
+                    } else {
+                        globalUsersData = [];
+                        console.error("Invalid data format received:", data);
+                    }
                 })
-                .catch(err => console.error("Failed to load users data from sheet", err));
+                .catch(err => {
+                    globalUsersData = [];
+                    console.error("Failed to load log data from sheet", err);
+                });
 
             const role = localStorage.getItem('user_role') || localStorage.getItem('login_role');
             if(role !== 'ADMIN') {
@@ -201,7 +210,7 @@
                 }
             }
         });
-
+        
         // Region ရွေးလိုက်ပါက သက်ဆိုင်ရာ Vehicle နှင့် Driver များကို Filter လုပ်ပြီး ပြပေးမည်
 // Region ရွေးလိုက်ပါက သက်ဆိုင်ရာ Vehicle နှင့် Driver များကို Filter လုပ်ပြီး ပြပေးမည်
         function updateVehiclesAndDrivers() {
