@@ -187,7 +187,7 @@
 
         document.getElementById('date').valueAsDate = new Date();
 
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbzANWWjeRpabEnVEnKWlVQ58LH8o7CitQSqG9XUuhbybcOjP3TIPv54YfmgbU7ZFIyE/exec';
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyVOWREctKnayAQf2YaybhsGcWZLOnoQj5ifCOpEnNe85sk0ByuUjf1wdGfCTwV74ON/exec';
         let globalUsersData = [];
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -269,7 +269,7 @@
         function calcTotal() {
             const r = parseFloat(document.getElementById('rate').value) || 0;
             const l = parseFloat(document.getElementById('liters').value) || 0;
-            document.getElementById('total').value = (r * l).toLocaleString() + " MMK";
+            document.getElementById('total').value = (r * l).toLocaleString();
         }
 
         function showModal(title, message, type = 'success') {
@@ -302,19 +302,19 @@
             .then(res => {
                 btn.innerText = "Save Record";
                 btn.disabled = false;
-                showModal("Successfully Saved!", res.message || "Data and image have been saved successfully.", "success");
+                showModal("Successfully Saved!", res.message || "Data have been saved successfully.", "success");
             })
             .catch(err => {
                 console.error(err);
                 btn.innerText = "Save Record";
                 btn.disabled = false;
-                showModal("Connection Error!", "Could not save data. Please check your Apps Script URL or internet connection.", "error");
+                showModal("Connection Error!", "Could not save data. Please check your internet connection.", "error");
             });
         }
 
   function submitFuel() {
             const btn = document.getElementById('submitBtn');
-            btn.innerText = "Saving...";
+            btn.innerText = "Loading...";
             btn.disabled = true;
 
             const fileInput = document.getElementById('voucherPhoto');
