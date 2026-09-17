@@ -212,8 +212,14 @@
         });
         
         // Region ရွေးလိုက်ပါက သက်ဆိုင်ရာ Vehicle နှင့် Driver များကို Filter လုပ်ပြီး ပြပေးမည်
-// Region ရွေးလိုက်ပါက သက်ဆိုင်ရာ Vehicle နှင့် Driver များကို Filter လုပ်ပြီး ပြပေးမည်
-        function updateVehiclesAndDrivers() {
+function updateVehiclesAndDrivers() {
+            // globalUsersData သည် Array အစစ်ဟုတ်မဟုတ် ထပ်မံစစ်ဆေးမည် (Error လုံးဝမတက်စေရန်)
+            if (!Array.isArray(globalUsersData)) {
+                console.error("globalUsersData is not an array:", globalUsersData);
+                globalUsersData = [];
+                return;
+            }
+
             const r = document.getElementById('region').value;
             const vSelect = document.getElementById('vehicle');
             const dSelect = document.getElementById('driver');
@@ -225,13 +231,14 @@
                 vSelect.disabled = false;
                 dSelect.disabled = false;
 
-                // ဒီနေရာမှာ ထည့်ပြီးသားဖြစ်ပါတယ် 👇
                 const filtered = globalUsersData.filter(item => item.region === r);
 
                 // Vehicle No. များကို ထည့်မည် (Duplicate များကို ရှောင်ရှားရန်)
                 const uniqueVehicles = [...new Set(filtered.map(item => item.carName))];
                 uniqueVehicles.forEach(car => {
-                    vSelect.innerHTML += `<option value="${car}">${car}</option>`;
+                    if(car) {
+                        vSelect.innerHTML += `<option value="${car}">${car}</option>`;
+                    }
                 });
 
                 // Driver Name များကို ထည့်မည်
@@ -247,7 +254,6 @@
                 dSelect.innerHTML = '<option value="">Select Region First</option>';
             }
         }
-
         // Vehicle No. ရွေးလိုက်ပါက သက်ဆိုင်ရာ Fuel Type ကို အလိုအလျောက် ရွေးချယ်ပေးမည်
         function updateFuelType() {
             const selectedCar = document.getElementById('vehicle').value;
