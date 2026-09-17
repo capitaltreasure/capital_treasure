@@ -203,6 +203,7 @@
         });
 
         // Region ရွေးလိုက်ပါက သက်ဆိုင်ရာ Vehicle နှင့် Driver များကို Filter လုပ်ပြီး ပြပေးမည်
+// Region ရွေးလိုက်ပါက သက်ဆိုင်ရာ Vehicle နှင့် Driver များကို Filter လုပ်ပြီး ပြပေးမည်
         function updateVehiclesAndDrivers() {
             const r = document.getElementById('region').value;
             const vSelect = document.getElementById('vehicle');
@@ -215,11 +216,12 @@
                 vSelect.disabled = false;
                 dSelect.disabled = false;
 
-                // globalUsersData ထဲမှ ရွေးချယ်ထားသော Region နှင့် ကိုက်ညီသည်များကို ရှာမည်
+                // ဒီနေရာမှာ ထည့်ပြီးသားဖြစ်ပါတယ် 👇
                 const filtered = globalUsersData.filter(item => item.region === r);
 
                 // Vehicle No. များကို ထည့်မည် (Duplicate များကို ရှောင်ရှားရန်)
                 const uniqueVehicles = [...new Set(filtered.map(item => item.carName))];
+...
                 uniqueVehicles.forEach(car => {
                     vSelect.innerHTML += `<option value="${car}">${car}</option>`;
                 });
