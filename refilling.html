@@ -163,7 +163,6 @@
                         <input type="file" id="voucherPhoto" accept="image/*" required style="padding: 8px;">
                     </div>
                     
-
                     <div class="form-group full">
                         <button type="submit" class="btn-primary" id="submitBtn">Submit</button>
                     </div>
@@ -292,27 +291,7 @@
             location.reload();
         }
 
-        // Server သို့ ဒေတာပို့ပေးမည့် သီးသန့် Function
-        function sendToServer(payload, btn) {
-            fetch(scriptURL, { 
-                method: 'POST', 
-                body: JSON.stringify(payload) 
-            })
-            .then(res => res.json())
-            .then(res => {
-                btn.innerText = "Save Record";
-                btn.disabled = false;
-                showModal("Successfully Saved!", res.message || "Data have been saved successfully.", "success");
-            })
-            .catch(err => {
-                console.error(err);
-                btn.innerText = "Save Record";
-                btn.disabled = false;
-                showModal("Connection Error!", "Could not save data. Please check your internet connection.", "error");
-            });
-        }
-
-  function submitFuel() {
+        function submitFuel() {
             const btn = document.getElementById('submitBtn');
             btn.innerText = "Loading...";
             btn.disabled = true;
@@ -320,7 +299,7 @@
             const fileInput = document.getElementById('voucherPhoto');
             if (fileInput.files.length === 0) {
                 showModal("Warning!", "Please select a voucher photo.", "error");
-                btn.innerText = "Save Record";
+                btn.innerText = "Submit";
                 btn.disabled = false;
                 return;
             }
@@ -358,7 +337,7 @@
 
                     const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
 
-                    // payload ကို ဒီနေရာမှာ တခါတည်း ကြေညာပေးထားပါတယ်
+                    // Payload တွင် Apps Script မျှော်လင့်ထားသော variable နာမည်များအတိုင်း တိကျစွာ ထည့်သွင်းထားသည်
                     const payload = {
                         action: "saveRefilling",
                         user: localStorage.getItem('userEmail') || localStorage.getItem('user_email') || localStorage.getItem('email') || localStorage.getItem('loggedInUser') || "admin@capitaltreasure.com",
@@ -366,7 +345,7 @@
                         voucherNumber: document.getElementById('voucher').value,  
                         regions: document.getElementById('region').value,        
                         plateNumber: document.getElementById('vehicle').value,    
-                        driverName: document.getElementById('driver').value,     
+                        driverName: document.getElementById('driver').value,      
                         type: document.getElementById('fuelType').value,
                         rate: document.getElementById('rate').value,
                         liter: document.getElementById('liters').value,          
@@ -379,20 +358,23 @@
                         mimeType: 'image/jpeg'
                     };
 
-                    // sendToServer ကို တိုက်ရိုက် ခေါ်သုံးခြင်း
                     fetch(scriptURL, { 
                         method: 'POST', 
                         body: JSON.stringify(payload) 
                     })
                     .then(res => res.json())
                     .then(res => {
-                        btn.innerText = "Save Record";
+                        btn.innerText = "Submit";
                         btn.disabled = false;
-                        showModal("Successfully Saved!", res.message || "Thank you for your data entry.", "success");
+                        if(res.status === "success" || res.message) {
+                            showModal("Successfully Saved!", res.message || "Thank you for your data entry.", "success");
+                        } else {
+                            showModal("Error!", res.message || "Failed to save record.", "error");
+                        }
                     })
                     .catch(err => {
                         console.error(err);
-                        btn.innerText = "Save Record";
+                        btn.innerText = "Submit";
                         btn.disabled = false;
                         showModal("Connection Error!", "Could not save data. Please check your internet connection.", "error");
                     });
@@ -402,5 +384,5 @@
             reader.readAsDataURL(file);
         }
     </script>
-   </body>
+</body>
 </html>
