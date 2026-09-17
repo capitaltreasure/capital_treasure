@@ -312,7 +312,7 @@
             });
         }
 
-        function submitFuel() {
+  function submitFuel() {
             const btn = document.getElementById('submitBtn');
             btn.innerText = "Saving...";
             btn.disabled = true;
@@ -327,10 +327,11 @@
 
             const file = fileInput.files[0];
             const reader = new FileReader();
-            reader.readAsDataURL(file);
+            
             reader.onload = function (event) {
                 const img = new Image();
                 img.src = event.target.result;
+                
                 img.onload = function () {
                     const canvas = document.createElement('canvas');
                     const MAX_WIDTH = 800;
@@ -357,6 +358,7 @@
 
                     const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
 
+                    // payload ကို ဒီနေရာမှာ တခါတည်း ကြေညာပေးထားပါတယ်
                     const payload = {
                         action: "saveRefilling",
                         user: localStorage.getItem('userEmail') || localStorage.getItem('user_email') || localStorage.getItem('email') || localStorage.getItem('loggedInUser') || "admin@capitaltreasure.com",
@@ -377,9 +379,27 @@
                         mimeType: 'image/jpeg'
                     };
 
-                    sendToServer(payload, btn);
+                    // sendToServer ကို တိုက်ရိုက် ခေါ်သုံးခြင်း
+                    fetch(scriptURL, { 
+                        method: 'POST', 
+                        body: JSON.stringify(payload) 
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        btn.innerText = "Save Record";
+                        btn.disabled = false;
+                        showModal("Successfully Saved!", res.message || "Data and image have been saved successfully.", "success");
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        btn.innerText = "Save Record";
+                        btn.disabled = false;
+                        showModal("Connection Error!", "Could not save data. Please check your Apps Script URL or internet connection.", "error");
+                    });
                 };
             };
+            
+            reader.readAsDataURL(file);
         }
     </script>
    </body>
