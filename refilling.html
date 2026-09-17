@@ -305,6 +305,7 @@ function updateVehiclesAndDrivers() {
             btn.disabled = true;
 
 // submitFuel() ထဲတွင် payload မပို့မီ FileReader ဖြင့် ပုံကို Base64 ပြောင်းရန်
+// submitFuel() ထဲရှိ FileReader အပိုင်းကို အောက်ပါအတိုင်း အစားထိုးပါ
 const fileInput = document.getElementById('voucherPhoto');
 if (fileInput.files.length === 0) {
     showModal("Warning!", "Please select a voucher photo.", "error");
@@ -313,32 +314,62 @@ if (fileInput.files.length === 0) {
     return;
 }
 
+const file = fileInput.files[0];
 const reader = new FileReader();
-reader.readAsDataURL(fileInput.files[0]);
-reader.onload = function () {
-    const payload = {
-        action: "saveRefilling",
-        user: localStorage.getItem('userEmail') || localStorage.getItem('user_email') || localStorage.getItem('email') || localStorage.getItem('loggedInUser') || "admin@capitaltreasure.com",
-        date: document.getElementById('date').value,
-        voucherNumber: document.getElementById('voucher').value,  
-        regions: document.getElementById('region').value,        
-        plateNumber: document.getElementById('vehicle').value,    
-        driverName: document.getElementById('driver').value,     
-        type: document.getElementById('fuelType').value,
-        rate: document.getElementById('rate').value,
-        liter: document.getElementById('liters').value,          
-        amount: document.getElementById('total').value,
-        extraCash: document.getElementById('extraCash').value,
-        stationName: document.getElementById('stationName').value,
-        remark: document.getElementById('remark').value,
-        // ပုံ အချက်အလက်များ
-        photoData: reader.result.split(',')[1],
-        photoName: fileInput.files[0].name,
-        mimeType: fileInput.files[0].type
-    };
+reader.readAsDataURL(file);
+reader.onload = function (event) {
+    const img = new Image();
+    img.src = event.target.result;
+    img.onload = function () {
+        // ပုံအရွယ်အစားကြီးနေပါက Canvas ဖြင့် ပုံကို အရွယ်အစားငယ်အောင် (Compress) လုပ်မည်
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
 
-    // ပြီးလျှင် fetch ဖြင့် server သို့ ပို့မည်
-    sendToServer(payload, btn);
+        if (width > height) {
+            if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+            }
+        } else {
+            if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+            }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // JPEG ပုံစံဖြင့် Quality 0.7 (70%) သို့ လျှော့ချမည်
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+        const payload = {
+            action: "saveRefilling",
+            user: localStorage.getItem('userEmail') || localStorage.getItem('user_email') || localStorage.getItem('email') || localStorage.getItem('loggedInUser') || "admin@capitaltreasure.com",
+            date: document.getElementById('date').value,
+            voucherNumber: document.getElementById('voucher').value,  
+            regions: document.getElementById('region').value,        
+            plateNumber: document.getElementById('vehicle').value,    
+            driverName: document.getElementById('driver').value,     
+            type: document.getElementById('fuelType').value,
+            rate: document.getElementById('rate').value,
+            liter: document.getElementById('liters').value,          
+            amount: document.getElementById('total').value,
+            extraCash: document.getElementById('extraCash').value,
+            stationName: document.getElementById('stationName').value,
+            remark: document.getElementById('remark').value,
+            photoData: compressedDataUrl.split(',')[1],
+            photoName: file.name,
+            mimeType: 'image/jpeg'
+        };
+
+        sendToServer(payload, btn);
+    };
 };
 
             fetch(scriptURL, { 
