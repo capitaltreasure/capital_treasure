@@ -182,20 +182,18 @@
         </div>
     </div>
 
-    <script>
+<script>
         lucide.createIcons();
 
         document.getElementById('date').valueAsDate = new Date();
 
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbzANWWjeRpabEnVEnKWlVQ58LH8o7CitQSqG9XUuhbybcOjP3TIPv54YfmgbU7ZFIyE/exec'; // <-- ကိုယ့်ရဲ့ Web App URL အမှန်ကို ထည့်ရန်
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbzANWWjeRpabEnVEnKWlVQ58LH8o7CitQSqG9XUuhbybcOjP3TIPv54YfmgbU7ZFIyE/exec';
         let globalUsersData = [];
 
-      // Page Load ဖြစ်တာနဲ့ Google Sheet က 'Log' Tab ထဲက ဒေတာများကို လှမ်းဆွဲမည်
         window.addEventListener('DOMContentLoaded', () => {
-            fetch(scriptURL + '?action=getLogs') // 'getLog' အစား 'getLogs' ဟု အမှန်ပြင်ထားပါသည်
+            fetch(scriptURL + '?action=getLogs')
                 .then(res => res.json())
                 .then(data => {
-                    // ရလာသည့် data သည် Array ဟုတ်မဟုတ် စစ်ဆေးပြီးမှ ထည့်မည်
                     if (Array.isArray(data)) {
                         globalUsersData = data; 
                     } else {
@@ -217,11 +215,8 @@
             }
         });
         
-        // Region ရွေးလိုက်ပါက သက်ဆိုင်ရာ Vehicle နှင့် Driver များကို Filter လုပ်ပြီး ပြပေးမည်
-function updateVehiclesAndDrivers() {
-            // globalUsersData သည် Array အစစ်ဟုတ်မဟုတ် ထပ်မံစစ်ဆေးမည် (Error လုံးဝမတက်စေရန်)
+        function updateVehiclesAndDrivers() {
             if (!Array.isArray(globalUsersData)) {
-                console.error("globalUsersData is not an array:", globalUsersData);
                 globalUsersData = [];
                 return;
             }
@@ -239,7 +234,6 @@ function updateVehiclesAndDrivers() {
 
                 const filtered = globalUsersData.filter(item => item.region === r);
 
-                // Vehicle No. များကို ထည့်မည် (Duplicate များကို ရှောင်ရှားရန်)
                 const uniqueVehicles = [...new Set(filtered.map(item => item.carName))];
                 uniqueVehicles.forEach(car => {
                     if(car) {
@@ -247,7 +241,6 @@ function updateVehiclesAndDrivers() {
                     }
                 });
 
-                // Driver Name များကို ထည့်မည်
                 const uniqueDrivers = [...new Set(filtered.map(item => item.driverName))];
                 uniqueDrivers.forEach(driver => {
                     if(driver) {
@@ -260,7 +253,7 @@ function updateVehiclesAndDrivers() {
                 dSelect.innerHTML = '<option value="">Select Region First</option>';
             }
         }
-        // Vehicle No. ရွေးလိုက်ပါက သက်ဆိုင်ရာ Fuel Type ကို အလိုအလျောက် ရွေးချယ်ပေးမည်
+
         function updateFuelType() {
             const selectedCar = document.getElementById('vehicle').value;
             const fuelTypeSelect = document.getElementById('fuelType');
@@ -299,7 +292,27 @@ function updateVehiclesAndDrivers() {
             location.reload();
         }
 
-    function submitFuel() {
+        // Server သို့ ဒေတာပို့ပေးမည့် သီးသန့် Function
+        function sendToServer(payload, btn) {
+            fetch(scriptURL, { 
+                method: 'POST', 
+                body: JSON.stringify(payload) 
+            })
+            .then(res => res.json())
+            .then(res => {
+                btn.innerText = "Save Record";
+                btn.disabled = false;
+                showModal("Successfully Saved!", res.message || "Data and image have been saved successfully.", "success");
+            })
+            .catch(err => {
+                console.error(err);
+                btn.innerText = "Save Record";
+                btn.disabled = false;
+                showModal("Connection Error!", "Could not save data. Please check your Apps Script URL or internet connection.", "error");
+            });
+        }
+
+        function submitFuel() {
             const btn = document.getElementById('submitBtn');
             btn.innerText = "Saving...";
             btn.disabled = true;
@@ -319,7 +332,6 @@ function updateVehiclesAndDrivers() {
                 const img = new Image();
                 img.src = event.target.result;
                 img.onload = function () {
-                    // ပုံအရွယ်အစားကြီးနေပါက Canvas ဖြင့် ပုံကို အရွယ်အစားငယ်အောင် (Compress) လုပ်မည်
                     const canvas = document.createElement('canvas');
                     const MAX_WIDTH = 800;
                     const MAX_HEIGHT = 800;
@@ -343,7 +355,6 @@ function updateVehiclesAndDrivers() {
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // JPEG ပုံစံဖြင့် Quality 0.7 (70%) သို့ လျှော့ချမည်
                     const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
 
                     const payload = {
@@ -370,28 +381,6 @@ function updateVehiclesAndDrivers() {
                 };
             };
         }
-
-        // Server သို့ ဒေတာပို့ပေးမည့် သီးသန့် Function
-        function sendToServer(payload, btn) {
-            fetch(scriptURL, { 
-                method: 'POST', 
-                body: JSON.stringify(payload) 
-            })
-            .then(res => res.json())
-            .then(res => {
-                btn.innerText = "Save Record";
-                btn.disabled = false;
-                showModal("Successfully Saved!", res.message || "Data and image have been saved successfully.", "success");
-            })
-            .catch(err => {
-                console.error(err);
-                btn.innerText = "Save Record";
-                btn.disabled = false;
-                showModal("Connection Error!", "Could not save data. Please check your Apps Script URL or internet connection.", "error");
-            });
-        }
-    
     </script>
-    
-</body>
+   </body>
 </html>
