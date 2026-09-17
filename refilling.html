@@ -299,21 +299,22 @@ function updateVehiclesAndDrivers() {
             btn.disabled = true;
 
             const payload = {
-                action: "saveRefilling",
-                user: localStorage.getItem('userEmail') || localStorage.getItem('user_email') || "admin@capitaltreasure.com",
-                date: document.getElementById('date').value,
-                voucherNumber: document.getElementById('voucher').value,  
-                regions: document.getElementById('region').value,        
-                plateNumber: document.getElementById('vehicle').value,    
-                driverName: document.getElementById('driver').value,     
-                type: document.getElementById('fuelType').value,
-                rate: document.getElementById('rate').value,
-                liter: document.getElementById('liters').value,          
-                amount: document.getElementById('total').value,
-                extraCash: document.getElementById('extraCash').value,
-                stationName: document.getElementById('stationName').value,
-                remark: document.getElementById('remark').value
-            };
+        action: "saveRefilling",
+        // LocalStorage ထဲတွင် သိမ်းထားတတ်သော Key နာမည်များအားလုံးကို စစ်ဆေးယူမည်
+        user: localStorage.getItem('userEmail') || localStorage.getItem('user_email') || localStorage.getItem('email') || localStorage.getItem('loggedInUser') || "admin@capitaltreasure.com",
+        date: document.getElementById('date').value,
+        voucherNumber: document.getElementById('voucher').value,  
+        regions: document.getElementById('region').value,        
+        plateNumber: document.getElementById('vehicle').value,    
+        driverName: document.getElementById('driver').value,     
+        type: document.getElementById('fuelType').value,
+        rate: document.getElementById('rate').value,
+        liter: document.getElementById('liters').value,          
+        amount: document.getElementById('total').value,
+        extraCash: document.getElementById('extraCash').value,
+        stationName: document.getElementById('stationName').value,
+        remark: document.getElementById('remark').value
+    };
 
             fetch(scriptURL, { 
                 method: 'POST', 
