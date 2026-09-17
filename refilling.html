@@ -404,6 +404,15 @@ window.addEventListener('DOMContentLoaded', () => {
             
             reader.readAsDataURL(file);
         }
+                function logout() {
+  // လိုအပ်ရင် localStorage သို့မဟုတ် sessionStorage များကို ရှင်းလင်းရန်
+  localStorage.clear();
+  sessionStorage.clear();
+  
+  // Login စာမျက်နှာသို့ ပြန်လည်ပို့ဆောင်ရန် (သင့် project ရဲ့ login page လမ်းကြောင်းအတိုင်း ပြင်နိုင်သည်)
+  window.location.href = "index.html"; // (သို့မဟုတ်) login.html သို့ ပြောင်းရန်
+}
+    
     </script>
    </body>
 </html>
