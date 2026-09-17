@@ -221,7 +221,6 @@
 
                 // Vehicle No. များကို ထည့်မည် (Duplicate များကို ရှောင်ရှားရန်)
                 const uniqueVehicles = [...new Set(filtered.map(item => item.carName))];
-...
                 uniqueVehicles.forEach(car => {
                     vSelect.innerHTML += `<option value="${car}">${car}</option>`;
                 });
