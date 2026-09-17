@@ -298,9 +298,20 @@ function updateVehiclesAndDrivers() {
             btn.innerText = "Saving...";
             btn.disabled = true;
 
-            const payload = {
+// submitFuel() ထဲတွင် payload မပို့မီ FileReader ဖြင့် ပုံကို Base64 ပြောင်းရန်
+const fileInput = document.getElementById('voucherPhoto');
+if (fileInput.files.length === 0) {
+    showModal("Warning!", "Please select a voucher photo.", "error");
+    btn.innerText = "Save Record";
+    btn.disabled = false;
+    return;
+}
+
+const reader = new FileReader();
+reader.readAsDataURL(fileInput.files[0]);
+reader.onload = function () {
+    const payload = {
         action: "saveRefilling",
-        // LocalStorage ထဲတွင် သိမ်းထားတတ်သော Key နာမည်များအားလုံးကို စစ်ဆေးယူမည်
         user: localStorage.getItem('userEmail') || localStorage.getItem('user_email') || localStorage.getItem('email') || localStorage.getItem('loggedInUser') || "admin@capitaltreasure.com",
         date: document.getElementById('date').value,
         voucherNumber: document.getElementById('voucher').value,  
@@ -313,8 +324,16 @@ function updateVehiclesAndDrivers() {
         amount: document.getElementById('total').value,
         extraCash: document.getElementById('extraCash').value,
         stationName: document.getElementById('stationName').value,
-        remark: document.getElementById('remark').value
+        remark: document.getElementById('remark').value,
+        // ပုံ အချက်အလက်များ
+        photoData: reader.result.split(',')[1],
+        photoName: fileInput.files[0].name,
+        mimeType: fileInput.files[0].type
     };
+
+    // ပြီးလျှင် fetch ဖြင့် server သို့ ပို့မည်
+    sendToServer(payload, btn);
+};
 
             fetch(scriptURL, { 
                 method: 'POST', 
