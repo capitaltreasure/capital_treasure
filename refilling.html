@@ -315,96 +315,102 @@ window.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-  function submitFuel() {
-            const btn = document.getElementById('submitBtn');
-            btn.innerText = "Loading...";
-            btn.disabled = true;
+ function submitFuel() {
+    const btn = document.getElementById('submitBtn');
+    btn.innerText = "Loading...";
+    btn.disabled = true;
 
-            const fileInput = document.getElementById('voucherPhoto');
-            if (fileInput.files.length === 0) {
-                showModal("Warning!", "Please select a voucher photo.", "error");
-                btn.innerText = "Save Record";
-                btn.disabled = false;
-                return;
+    const fileInput = document.getElementById('voucherPhoto');
+    if (fileInput.files.length === 0) {
+        showModal("Warning!", "Please select a voucher photo.", "error");
+        btn.innerText = "Save Record";
+        btn.disabled = false;
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function (event) {
+        const img = new Image();
+        img.src = event.target.result;
+        
+        img.onload = function () {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 500;  // ပုံဆိုဒ်ကို ပိုသေးအောင် ချိန်ထားသည်
+            const MAX_HEIGHT = 500;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+            } else {
+                if (height > MAX_HEIGHT) {
+                    width *= MAX_HEIGHT / height;
+                    height = MAX_HEIGHT;
+                }
             }
 
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            
-            reader.onload = function (event) {
-                const img = new Image();
-                img.src = event.target.result;
-                
-                img.onload = function () {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800;
-                    const MAX_HEIGHT = 800;
-                    let width = img.width;
-                    let height = img.height;
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
 
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
-                    }
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+            const base64Data = compressedDataUrl.split(',')[1];
 
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-
-                    // payload ကို ဒီနေရာမှာ တခါတည်း ကြေညာပေးထားပါတယ်
-                    const payload = {
-                        action: "saveRefilling",
-                        user: localStorage.getItem('userEmail') || localStorage.getItem('user_email') || localStorage.getItem('email') || localStorage.getItem('loggedInUser') || "admin@capitaltreasure.com",
-                        date: document.getElementById('date').value,
-                        voucherNumber: document.getElementById('voucher').value,  
-                        regions: document.getElementById('region').value,        
-                        plateNumber: document.getElementById('vehicle').value,    
-                        driverName: document.getElementById('driver').value,     
-                        type: document.getElementById('fuelType').value,
-                        rate: document.getElementById('rate').value,
-                        liter: document.getElementById('liters').value,          
-                        amount: document.getElementById('total').value,
-                        extraCash: document.getElementById('extraCash').value,
-                        stationName: document.getElementById('stationName').value,
-                        remark: document.getElementById('remark').value,
-                        photoData: compressedDataUrl.split(',')[1],
-                        photoName: file.name,
-                        mimeType: 'image/jpeg'
-                    };
-
-                    // sendToServer ကို တိုက်ရိုက် ခေါ်သုံးခြင်း
-                    fetch(scriptURL, { 
-                        method: 'POST', 
-                        body: JSON.stringify(payload) 
-                    })
-                    .then(res => res.json())
-                    .then(res => {
-                        btn.innerText = "Save Record";
-                        btn.disabled = false;
-                        showModal("Successfully Saved!", res.message || "Thank you for your data entry.", "success");
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        btn.innerText = "Save Record";
-                        btn.disabled = false;
-                        showModal("Connection Error!", "Could not save data. Please check your internet connection.", "error");
-                    });
-                };
+            const payload = {
+                action: "saveRefilling",
+                user: localStorage.getItem('userEmail') || localStorage.getItem('user_email') || localStorage.getItem('email') || localStorage.getItem('loggedInUser') || "admin@capitaltreasure.com",
+                date: document.getElementById('date').value,
+                voucherNumber: document.getElementById('voucher').value,        
+                regions: document.getElementById('region').value,        
+                plateNumber: document.getElementById('vehicle').value,    
+                driverName: document.getElementById('driver').value,     
+                type: document.getElementById('fuelType').value,
+                rate: document.getElementById('rate').value,
+                liter: document.getElementById('liters').value,          
+                amount: document.getElementById('total').value,
+                extraCash: document.getElementById('extraCash').value,
+                stationName: document.getElementById('stationName').value,
+                remark: document.getElementById('remark').value,
+                photoData: base64Data,
+                photoName: file.name,
+                mimeType: 'image/jpeg'
             };
-            
-            reader.readAsDataURL(file);
-        }
-                function logout() {
+
+            // Google Apps Script သို့ ပို့ရာတွင် redirect: 'follow' ထည့်ရန် အရေးကြီးသည်
+            fetch(scriptURL, { 
+                method: 'POST', 
+                redirect: 'follow',
+                body: JSON.stringify(payload) 
+            })
+            .then(res => res.json())
+            .then(res => {
+                btn.innerText = "Save Record";
+                btn.disabled = false;
+                if(res.status === "success") {
+                    showModal("Successfully Saved!", res.message || "Data saved with photo!", "success");
+                } else {
+                    showModal("Error!", res.message || "Failed to save data.", "error");
+                }
+            })
+            .catch(err => {
+                console.error("Fetch Error:", err);
+                btn.innerText = "Save Record";
+                btn.disabled = false;
+                showModal("Connection Error!", "Could not save data. Check console for details.", "error");
+            });
+        };
+    };
+    
+    reader.readAsDataURL(file);
+}
+    
+    function logout() {
   // လိုအပ်ရင် localStorage သို့မဟုတ် sessionStorage များကို ရှင်းလင်းရန်
   localStorage.clear();
   sessionStorage.clear();
